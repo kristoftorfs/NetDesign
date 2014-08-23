@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @property ADOConnection $db
+ * @property Smarty $smarty
+ * @property CmsApp $cms
+ * @property array $config
+ */
 class NetDesign extends CMSModule {
     function GetVersion() {
         return '0.1';
