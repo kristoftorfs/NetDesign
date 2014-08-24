@@ -8,7 +8,7 @@
  */
 class NetDesign extends CMSModule {
     function GetVersion() {
-        return '0.1';
+        return '1.0.0';
     }
 
     protected function InitializeFrontend() {
@@ -44,6 +44,12 @@ class NetDesign extends CMSModule {
         if (isset($_REQUEST['id'])) $id = $_REQUEST['id'];
         elseif (isset($_REQUEST['mact'])) list($dummy, $id) = explode(',', $_REQUEST['mact']);
         return $id;
+    }
+
+    protected function GetTable($table = null) {
+        $ret = sprintf('%s_module_%s', cms_db_prefix(), strtolower(get_class($this)));
+        if (!empty($table)) $ret .= '_' . $table;
+        return $ret;
     }
 
 }
