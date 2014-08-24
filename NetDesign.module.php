@@ -47,7 +47,7 @@ class NetDesign extends CMSModule {
     }
 
     protected function GetTable($table = null) {
-        $ret = sprintf('%s_module_%s', cms_db_prefix(), strtolower(get_class($this)));
+        $ret = sprintf('%smodule_%s', cms_db_prefix(), strtolower(get_class($this)));
         if (!empty($table)) $ret .= '_' . $table;
         return $ret;
     }
