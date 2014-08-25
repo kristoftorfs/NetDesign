@@ -52,4 +52,8 @@ class NetDesign extends CMSModule {
         return $ret;
     }
 
+    public function AssignLang() {
+        $this->smarty->assign('lang', current($this->langhash));
+    }
+
 }
