@@ -56,4 +56,21 @@ class NetDesign extends CMSModule {
         $this->smarty->assign('lang', current($this->langhash));
     }
 
+    public function SendHeaders() {
+        header('X-UA-Compatible: IE=edge,chrome=1');
+    }
+
+    public function DisplayTemplate($template) {
+        $tpl = sprintf('file:%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_path'), $template);
+        if ($this->smarty->template_exists($tpl)) {
+            $url = sprintf('%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_url'), array_shift(explode('/', $template)));
+            $this->smarty->assign('templateUrl', $url);
+            echo $this->smarty->fetch($tpl);
+        }
+    }
+
+    public function ExecCode($filename) {
+        $php = sprintf('file:%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_path'), $filename);
+        if (is_file($php)) include($php);
+    }
 }
