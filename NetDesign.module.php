@@ -1,5 +1,9 @@
 <?php
 
+// Register Smarty resource
+require_once(__DIR__ . '/lib/class.CMSSiteFileTemplateResource.php');
+cmsms()->GetSmarty()->registerResource('site_file_tpl', new CMSSiteFileTemplateResource());
+
 /**
  * @property ADOConnection $db
  * @property Smarty $smarty
@@ -199,7 +203,7 @@ class NetDesign extends CMSModule {
      */
     final public function GetSiteResource($template) {
         $this->AssignSiteVars();
-        return sprintf('file:%s/%s', $this->GetSitePath(), $template);
+        return sprintf('site_file_tpl:%s', $template);
     }
 
     /**
@@ -229,16 +233,6 @@ class NetDesign extends CMSModule {
         echo "<pre>";
         call_user_func_array('var_dump', func_get_args());
         echo "</pre>";
-    }
-
-    /**
-     * Includes a PHP file from the site directory.
-     *
-     * @param string $filename
-     */
-    final public function IncludeSitePhp($filename) {
-        $gCms = cmsms();
-        if (is_file(cms_join_path($this->GetSitePath(), $filename))) include(cms_join_path($this->GetSitePath(), $filename));
     }
 
     /**
@@ -311,6 +305,26 @@ class NetDesign extends CMSModule {
         if (!array_key_exists($module, NetDesign::$settings)) NetDesign::$settings[$module] = array();
         NetDesign::$settings[$module][$name] = array('caption' => $caption, 'input' => $input);
         ksort(NetDesign::$settings);
+    }
+
+    /**
+     * Clone of CMSModule::DoAction, but this executes an action in the site directory (netdesign/<side_id>/actions/action.<action>.php).
+     *
+     * @param string $name Name of the action to perform
+     * @param string $id The ID of the module
+     * @param string $params The parameters targeted for this module
+     * @param int|string $returnid The current page id that is being displayed.
+     * @return string output XHTML.
+     */
+    final function DoSiteAction($name, $id, $params, $returnid='') {
+        $filename = cms_join_path($this->GetSitePath(), 'actions', sprintf('action.%s.php', $name));
+        if (@is_file($filename)) {
+            $gCms = cmsms();
+            $db = $gCms->GetDb();
+            $config = $gCms->GetConfig();
+            $smarty = $gCms->GetSmarty();
+            include($filename);
+        }
     }
 
     /**

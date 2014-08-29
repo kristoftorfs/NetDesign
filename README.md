@@ -50,8 +50,28 @@ The default action should be called on top of every page template as it does the
 1. It serves the browser the X-UA-Compatible header to make sure Internet Explorer always runs in standards mode for the latest version.
 2. It executes the CMS Made Simple "process_pagedata" tag.
 
-An optional argument "template" can be given to render that Smarty template (residing in docroot/netdesign/site_id directory).
+An optional argument "template" can be given to render that Smarty template (residing in docroot/netdesign/site_id/templates directory).
+
+### Site actions
+
+Custom actions can be put in the site directory The default action is written so that if a parameter site_action is set, it doesn't perform
+the above-mentioned default action, but simply passes everything through to the site action. Some example code below:
+
+```
+<!-- netdesign/mysite.com/templates/helloword.tpl -->
+<p>Hello, {$who}!</p>
+```
+
+```php
+// netdesign/mysite.com/actions/action.helloword.php
+/** @var NetDesign $this */
+if (!isset($gCms)) exit;
+$this->smarty->assign('who', $params['who']);
+echo $this->smarty->fetch($this->GetSiteResource('helloword.tpl'));
+```
+
+Now somewhere in a page just include ```{NetDesign site_action="helloword" who="world"}```.
 
 ### Template
 
-Renders the site template given by the argument "template". The template should reside in docroot/netdesign/site_id directory.
+Renders the site template given by the argument "template". The template should reside in docroot/netdesign/site_id/templates directory.
