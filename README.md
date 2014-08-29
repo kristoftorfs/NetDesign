@@ -7,6 +7,8 @@ This module serves as the base for all other modules.
 It also ensures that we can have multiple websites running on a single CMS Made Simple installation for development.
 Switching sites is available in the module admin page.
 
+## Coding conventions
+
 If a child module needs to have files in the site directory it should do it like in the following example used by the Mapper module:
 
 ```
@@ -30,7 +32,7 @@ See the methods ```GetModuleUploadsPath()``` and ```GetModuleUploadsUrl()```.
 
 ## Developer functions
 
-Several methods are made available through this module. See (documented) methods in the source code.
+Several methods are made available through this module. These methods are the ones that are documented in the source code.
 
 ## Module settings
 
@@ -75,3 +77,20 @@ Now somewhere in a page just include ```{NetDesign site_action="helloword" who="
 ### Template
 
 Renders the site template given by the argument "template". The template should reside in docroot/netdesign/site_id/templates directory.
+
+### Meta
+
+Add default metadata to the HTML head.
+
+```
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>{title} | {sitename}</title>
+{if isset($canonical)}<link rel="canonical" href="{$canonical}" />{elseif isset($content_obj)}<link rel="canonical" href="{$content_obj->GetURL()}" />{/if}
+{cms_stylesheet}
+{metadata}
+{cms_selflink dir="start" rellink=1}
+{cms_selflink dir="prev" rellink=1}
+{cms_selflink dir="next" rellink=1}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
