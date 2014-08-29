@@ -32,6 +32,15 @@ See the methods ```GetModuleUploadsPath()``` and ```GetModuleUploadsUrl()```.
 
 Several methods are made available through this module. See (documented) methods in the source code.
 
+## Module settings
+
+Child modules can register with this module to have their settings shown in the admin interface of NetDesign CMS. For an example, see PhotoGallery::__construct().
+Associated methods for this are:
+
+- GenerateSetting
+- RegisterSetting
+- GetSetting
+
 ## Module actions
 
 ### Default
