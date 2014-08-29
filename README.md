@@ -78,6 +78,13 @@ Now somewhere in a page just include ```{NetDesign site_action="helloword" who="
 
 Renders the site template given by the argument "template". The template should reside in docroot/netdesign/site_id/templates directory.
 
+#### Assigned variables
+
+When showing a template both with the default or template action the following variables get assigned:
+
+- ```$site_id```: The id of the active website e.g. hetsnoephuisje.be
+- ```$site_url```: The URL to the active site directory e.g. http://www.hetsnoephuisje.be/netdesign/hetsnoephuisje.be
+
 ### Meta
 
 Add default metadata to the HTML head.
