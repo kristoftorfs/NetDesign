@@ -7,6 +7,26 @@
  * @property array $config
  */
 class NetDesign extends CMSModule {
+    private static $loaders = array();
+    protected static $settings = array();
+
+    function __construct() {
+        parent::__construct();
+        spl_autoload_register(function($class) {
+            foreach(NetDesign::$loaders as $loader) {
+                list($directory, $pattern) = $loader;
+                if (!fnmatch($pattern, $class)) continue;
+                $fn = cms_join_path($directory, sprintf('class.%s.php', $class));
+                if (!file_exists($fn)) continue;
+                require_once($fn);
+            }
+        }, true);
+    }
+
+    function GetFriendlyName() {
+        return $this->Lang('friendlyname');
+    }
+
     function GetVersion() {
         return '1.0.0';
     }
@@ -32,13 +52,52 @@ class NetDesign extends CMSModule {
     }
 
     function GetAdminSection() {
-        return 'extensions';
+        return 'siteadmin';
+    }
+
+    function VisibleToAdminUser() {
+        return $this->CheckPermission('usage');
     }
 
     function IsPluginModule() {
         return true;
     }
 
+    function Install() {
+        // Create permission(s)
+        $this->CreatePermission('usage', 'Manage NetDesign CMS settings');
+        // Copy imagecache.php to the uploads directory
+        $src = cms_join_path($this->GetModulePath(), 'imagecache.php');
+        $dst = cms_join_path($this->config['uploads_path'], 'imagecache.php');
+        copy($src, $dst);
+        // Done
+        return false;
+    }
+
+    function Uninstall() {
+        // Remove permission(s)
+        $this->RemovePermission('usage');
+        // Remove imagecache.php from the uploads directory
+        $dst = cms_join_path($this->config['uploads_path'], 'imagecache.php');
+        @unlink($dst);
+        // Done
+        return false;
+    }
+
+    /**
+     * Convenience function to easily get an instance of a module, with code insight.
+     *
+     * @return static
+     */
+    public static function GetInstance() {
+        return cms_utils::get_module(get_called_class());
+    }
+
+    /**
+     * Returns the CMSMS module id e.g. m1_
+     *
+     * @return string
+     */
     public function GetModuleId() {
         $id = 'm1_';
         if (isset($_REQUEST['id'])) $id = $_REQUEST['id'];
@@ -46,31 +105,221 @@ class NetDesign extends CMSModule {
         return $id;
     }
 
-    protected function GetTable($table = null) {
-        $ret = sprintf('%smodule_%s', cms_db_prefix(), strtolower(get_class($this)));
+    /**
+     * Returns the base URL for this module when using imagecache.php. E.g. for Mapper this is 'http://root_url/uploads/imagecache.php/.Mapper'.
+     *
+     * @return string
+     */
+    public function GetImageCacheUrl() {
+        return sprintf('%s/imagecache.php/.%s', $this->config['uploads_url'], get_class($this));
+    }
+
+    /**
+     * Returns a generated table name for the module.
+     *
+     * Examples:
+     * - when called from module Mapper and $table set to MapNews it will return '<cmsms_db_prefix>module_mapper_MapNews'
+     * - when called from module Mapper and $table is omitted it will return '<cmsms_db_prefix>module_mapper'
+     *
+     * @param string $table Optional suffix.
+     * @param string $module Optional module name. Defaults to the class name of the called module.
+     * @return string
+     */
+    final public function GetTable($table = null, $module = null) {
+        if (!empty($module)) $class = $module;
+        else $class = get_class($this);
+        $ret = sprintf('%smodule_%s', cms_db_prefix(), strtolower($class));
         if (!empty($table)) $ret .= '_' . $table;
         return $ret;
     }
 
-    public function AssignLang() {
+    /**
+     * Assigns all language strings for this module to a Smarty variable called $lang.
+     */
+    final public function AssignLang() {
         $this->smarty->assign('lang', current($this->langhash));
     }
 
-    public function SendHeaders() {
+    /**
+     * Serves the browser the X-UA-Compatible header to make sure Internet Explorer always runs in standards mode for the latest version.
+     */
+    final public function SendHeaders() {
         header('X-UA-Compatible: IE=edge,chrome=1');
     }
 
-    public function DisplayTemplate($template) {
-        $tpl = sprintf('file:%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_path'), $template);
-        if ($this->smarty->template_exists($tpl)) {
-            $url = sprintf('%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_url'), array_shift(explode('/', $template)));
-            $this->smarty->assign('templateUrl', $url);
-            echo $this->smarty->fetch($tpl);
-        }
+    /**
+     * Returns the site id set in config.php ($config['netdesign']).
+     *
+     * @return string
+     */
+    final public function GetSiteId() {
+        return (string)get_site_preference('NetDesign_site_id');
     }
 
-    public function ExecCode($filename) {
-        $php = sprintf('file:%s/netdesign/%s', cmsms()->GetConfig()->offsetGet('root_path'), $filename);
-        if (is_file($php)) include($php);
+    /**
+     * Returns the filesystem path to the site directory.
+     *
+     * @return string
+     */
+    final public function GetSitePath() {
+        return cms_join_path($this->config['root_path'], 'netdesign', $this->GetSiteId());
+    }
+
+    /**
+     * Returns the filesystem path to the module directory in the site.
+     *
+     * @return string
+     */
+    final public function GetSiteModulePath() {
+        return cms_join_path($this->config['root_path'], 'netdesign', $this->GetSiteId(), 'modules', $this->GetName());
+    }
+
+    /**
+     * Returns the URL to the site directory.
+     *
+     * @return string
+     */
+    final public function GetSiteUrl() {
+        return sprintf('%s/netdesign/%s', $this->config['root_url'], $this->GetSiteId());
+    }
+
+    /**
+     * Assigns the site_id and site_url variables to Smarty. This function is automatically called in GetSiteResource.
+     */
+    public function AssignSiteVars() {
+        $this->smarty->assign('site_id', $this->GetSiteId());
+        $this->smarty->assign('site_url', $this->GetSiteUrl());
+    }
+
+    /**
+     * Returns a Smarty resource for a site template.
+     *
+     * @param string $template
+     * @return string
+     */
+    final public function GetSiteResource($template) {
+        $this->AssignSiteVars();
+        return sprintf('file:%s/%s', $this->GetSitePath(), $template);
+    }
+
+    /**
+     * Returns the filesystem path to the (hidden) uploads-directory for this module.
+     *
+     * @return string
+     */
+    final public function GetModuleUploadsPath() {
+        return cms_join_path($this->config['uploads_path'], sprintf('.%s', $this->GetName()));
+    }
+
+    /**
+     * Returns the filesystem path to the (hidden) uploads-directory for this module.
+     *
+     * @return string
+     */
+    final public function GetModuleUploadsUrl() {
+        return cms_join_path($this->config['uploads_url'], sprintf('.%s', $this->GetName()));
+    }
+
+    /**
+     * Dev tool: var_dump but wraps it in a pre tag.
+     *
+     * @param $var
+     */
+    final public function VarDump($var) {
+        echo "<pre>";
+        call_user_func_array('var_dump', func_get_args());
+        echo "</pre>";
+    }
+
+    /**
+     * Includes a PHP file from the site directory.
+     *
+     * @param string $filename
+     */
+    final public function IncludeSitePhp($filename) {
+        $gCms = cmsms();
+        if (is_file(cms_join_path($this->GetSitePath(), $filename))) include(cms_join_path($this->GetSitePath(), $filename));
+    }
+
+    /**
+     * Includes the language files from the module site directory.
+     */
+    final public function IncludeSiteLang() {
+        $inc = sprintf('%s/lang/%s.php', $this->GetSiteModulePath(), CmsNlsOperations::get_current_language());
+        if (!file_exists($inc)) return;
+        require_once($inc);
+        if (!isset($lang)) return;
+        if (!array_key_exists(CmsNlsOperations::get_current_language(), $this->langhash)) $this->langhash[CmsNlsOperations::get_current_language()] = array();
+        $this->langhash[CmsNlsOperations::get_current_language()] = array_merge($this->langhash[CmsNlsOperations::get_current_language()], $lang);
+    }
+
+    /**
+     * Register a directory to autoload classes matching $classPattern. Files should be named 'class.MyClassName.php'.
+     *
+     * @param string $directory
+     * @param string $classPattern
+     */
+    final public function RegisterClassDirectory($directory, $classPattern = '*') {
+        NetDesign::$loaders[] = array($directory, $classPattern);
+    }
+
+    /**
+     * Includes all PHP files in the specified directory.
+     *
+     * @param string $directory
+     * @param bool $recursive
+     */
+    final public function IncludeClassDirectory($directory, $recursive = true) {
+        $files = array();
+        if ($recursive === true) {
+            $dir = new RecursiveDirectoryIterator($directory);
+            $it = new RecursiveIteratorIterator($dir);
+            $regex = new RegexIterator($it, '/^.+\.php$/i', RegexIterator::GET_MATCH);
+            foreach($regex as $file) $files[] = $file[0];
+        } else {
+            $dir = new DirectoryIterator($directory);
+            $it = new IteratorIterator($dir);
+            $regex = new RegexIterator($it, '/^.+\.php$/i', RegexIterator::GET_MATCH);
+            foreach($regex as $file) $files[] = cms_join_path($directory, $file[0]);
+        }
+        foreach($files as $file) require_once($file);
+    }
+
+    /**
+     * Generates a name for an input used in the NetDesign settings.
+     *
+     * Follows the following convention:
+     * MyModule_setting_name e.g. PhotoGallery_single_gallery
+     *
+     * @param string $name
+     * @return string
+     */
+    final public function GenerateSetting($name) {
+        return sprintf('%s_%s', get_class($this), trim(strtolower($name)));
+    }
+
+    /**
+     * Registers a setting to be included in the admin interface of the NetDesign module.
+     *
+     * @param string $name The setting name as generated by GenerateSetting().
+     * @param string $input The input created by $this->CreateInput... Use GenerateSetting() to get a name using the right conventions.
+     * @param string $caption The (translated) caption for the input.
+     * @param string
+     */
+    final public function RegisterSetting($name, $input, $caption) {
+        $module = $this->GetFriendlyName();
+        if (!array_key_exists($module, NetDesign::$settings)) NetDesign::$settings[$module] = array();
+        NetDesign::$settings[$module][$name] = array('caption' => $caption, 'input' => $input);
+        ksort(NetDesign::$settings);
+    }
+
+    /**
+     * Returns the value of a setting set in the admin interface of the NetDesign module
+     *
+     * @param string $name The setting name as generated by GenerateSetting().
+     * @param mixed $default
+     */
+    final public function GetSetting($name, $default = '') {
+        return get_site_preference($name, $default);
     }
 }
