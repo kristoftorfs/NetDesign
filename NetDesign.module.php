@@ -218,6 +218,7 @@ class NetDesign extends CMSModule {
      * Includes the language files from the module site directory.
      */
     final public function IncludeSiteLang() {
+        cms_module_Lang($this);         // First load the standard module translations
         $inc = sprintf('%s/lang/%s.php', $this->GetSiteModulePath(), CmsNlsOperations::get_current_language());
         if (!file_exists($inc)) return;
         require_once($inc);
