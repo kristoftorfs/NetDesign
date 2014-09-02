@@ -2,7 +2,7 @@
 
 /** @var NetDesign $this */
 if (!isset($gCms)) exit;
-if (!$this->CheckPermission('usage')) exit;
+if (!$this->CheckPermission('NetDesign.usage')) exit;
 
 // Form processing
 if (array_key_exists('cancel', $params)) {

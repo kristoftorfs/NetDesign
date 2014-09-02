@@ -60,7 +60,7 @@ class NetDesign extends CMSModule {
     }
 
     function VisibleToAdminUser() {
-        return $this->CheckPermission('usage');
+        return $this->CheckPermission('NetDesign.usage');
     }
 
     function IsPluginModule() {
