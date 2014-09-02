@@ -67,27 +67,6 @@ class NetDesign extends CMSModule {
         return true;
     }
 
-    function Install() {
-        // Create permission(s)
-        $this->CreatePermission('usage', 'NetDesign CMS: Manage NetDesign CMS settings');
-        // Copy imagecache.php to the uploads directory
-        $src = cms_join_path($this->GetModulePath(), 'imagecache.php');
-        $dst = cms_join_path($this->config['uploads_path'], 'imagecache.php');
-        copy($src, $dst);
-        // Done
-        return false;
-    }
-
-    function Uninstall() {
-        // Remove permission(s)
-        $this->RemovePermission('usage');
-        // Remove imagecache.php from the uploads directory
-        $dst = cms_join_path($this->config['uploads_path'], 'imagecache.php');
-        @unlink($dst);
-        // Done
-        return false;
-    }
-
     /**
      * Convenience function to easily get an instance of a module, with code insight.
      *
