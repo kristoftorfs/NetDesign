@@ -1,9 +1,5 @@
 <?php
 
-// Register Smarty resource
-require_once(__DIR__ . '/lib/class.CMSSiteFileTemplateResource.php');
-cmsms()->GetSmarty()->registerResource('site_file_tpl', new CMSSiteFileTemplateResource());
-
 /**
  * @property ADOConnection $db
  * @property Smarty $smarty
@@ -13,6 +9,18 @@ cmsms()->GetSmarty()->registerResource('site_file_tpl', new CMSSiteFileTemplateR
 class NetDesign extends CMSModule {
     private static $loaders = array();
     protected static $settings = array();
+
+    /**
+     * Returns the main version of CMS Made Simple.
+     *
+     * This function is useful when using newer features from CMSMS 2.x, but still staying compatible with CMSMS 1.x.
+     *
+     * @return int
+     */
+    final static function GetCMSVersion() {
+        $version = substr($GLOBALS['CMS_VERSION'], 0, 1);
+        return (int)$version;
+    }
 
     function __construct() {
         parent::__construct();
@@ -35,12 +43,22 @@ class NetDesign extends CMSModule {
         return '1.0.0';
     }
 
+    function GetHelp() {
+    }
+
+    private static function RegisterResource() {
+        require_once(cms_join_path(__DIR__, 'lib', 'class.CMSSiteFileTemplateResource.php'));
+        cmsms()->GetSmarty()->registerResource('site_file_tpl', new CMSSiteFileTemplateResource());
+    }
+
     protected function InitializeFrontend() {
         $this->RegisterModulePlugin();
+        NetDesign::RegisterResource();
     }
 
     protected function InitializeAdmin() {
         $this->RegisterModulePlugin();
+        NetDesign::RegisterResource();
     }
 
     function GetAuthor() {
