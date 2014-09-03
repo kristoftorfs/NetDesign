@@ -12,6 +12,13 @@ if (array_key_exists('cancel', $params)) {
         if (in_array($key, array('apply', 'action'))) continue;
         set_site_preference($key, trim($value));
     }
+    // If the active site was changed we need to relink the language files
+    $mops = ModuleOperations::get_instance();
+    foreach($mops->GetInstalledModules() as $mod) {
+        $mod = $mops->get_module_instance($mod);
+        if (!($mod instanceof NetDesign)) continue;
+        $mod->IncludeSiteLang(true);
+    }
     $this->Redirect($id, 'defaultadmin', '', array('module_message' => $this->Lang('applied')));
 }
 

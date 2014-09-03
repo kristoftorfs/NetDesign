@@ -24,6 +24,7 @@ class NetDesign extends CMSModule {
 
     function __construct() {
         parent::__construct();
+        $this->IncludeSiteLang();
         spl_autoload_register(function($class) {
             foreach(NetDesign::$loaders as $loader) {
                 list($directory, $pattern) = $loader;
@@ -138,7 +139,17 @@ class NetDesign extends CMSModule {
      * Assigns all language strings for this module to a Smarty variable called $lang.
      */
     final public function AssignLang() {
-        $this->smarty->assign('lang', current($this->langhash));
+        if (NetDesign::GetCMSVersion() == 1) {
+            $this->smarty->assign('lang', current($this->langhash));
+        } else {
+            $this->smarty->assign('lang', array());
+            $data = &CmsLangOperations::$_langdata;
+            $clng = CmsNlsOperations::get_current_language();
+            $mod = $this->GetName();
+            if (!array_key_exists($mod, $data)) return;
+            if (!array_key_exists($clng, $data[$mod])) return;
+            $this->smarty->assign('lang', $data[$mod][$clng]);
+        }
     }
 
     /**
@@ -233,16 +244,22 @@ class NetDesign extends CMSModule {
     }
 
     /**
-     * Includes the language files from the module site directory.
+     * Includes the language files from the module site directory (by creating a symbolic link in the corresponding module_custom directory).
+     *
+     * @param boolean $force If TRUE an already existing link will removed and recreated.
      */
-    final public function IncludeSiteLang() {
-        cms_module_Lang($this);         // First load the standard module translations
-        $inc = sprintf('%s/lang/%s.php', $this->GetSiteModulePath(), CmsNlsOperations::get_current_language());
-        if (!file_exists($inc)) return;
-        require_once($inc);
-        if (!isset($lang)) return;
-        if (!array_key_exists(CmsNlsOperations::get_current_language(), $this->langhash)) $this->langhash[CmsNlsOperations::get_current_language()] = array();
-        $this->langhash[CmsNlsOperations::get_current_language()] = array_merge($this->langhash[CmsNlsOperations::get_current_language()], $lang);
+    final public function IncludeSiteLang($force = false) {
+        if (!ModuleOperations::get_instance()->IsModuleActive($this->GetName())) return;
+        $src = cms_join_path($this->GetSiteModulePath(), 'lang');
+        $dst = cms_join_path(cmsms()->GetConfig()->offsetGet('root_path'), 'module_custom', $this->GetName(), 'lang');
+        if (!is_dir($src)) return;
+        if (is_link($dst) && $force !== true) {
+            return;
+        } elseif (is_link($dst)) {
+            @unlink($dst);
+        }
+        @mkdir(dirname($dst), 0775, true);
+        symlink($src, $dst);
     }
 
     /**
