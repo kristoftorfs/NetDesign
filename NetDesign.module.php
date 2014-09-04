@@ -23,6 +23,7 @@ class NetDesign extends CMSModule {
     }
 
     function __construct() {
+        $this->RestrictUnknownParams(false);
         parent::__construct();
         $this->IncludeSiteLang();
         spl_autoload_register(function($class) {
