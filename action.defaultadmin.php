@@ -19,6 +19,9 @@ if (array_key_exists('cancel', $params)) {
         if (!($mod instanceof NetDesign)) continue;
         $mod->IncludeSiteLang(true);
     }
+    // Also, if the active site was changed we need to clear the cache so the admin menu gets updated
+    cmsms()->clear_cached_files(-1);
+    // All done, redirect
     $this->Redirect($id, 'defaultadmin', '', array('module_message' => $this->Lang('applied')));
 }
 
