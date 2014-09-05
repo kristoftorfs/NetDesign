@@ -8,6 +8,7 @@ $this->CreatePermission('NetDesign.usage', 'NetDesign CMS: Manage NetDesign CMS 
 // Copy imagecache.php to the uploads directory
 $src = cms_join_path($this->GetModulePath(), 'imagecache.php');
 $dst = cms_join_path($this->config['uploads_path'], 'imagecache.php');
+chmod($dst, 0664);
 copy($src, $dst);
 
 $cfg = array(
