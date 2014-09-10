@@ -37,6 +37,10 @@ class NetDesign extends CMSModule {
         }, true);
     }
 
+    public function SuppressAdminOutput(&$request) {
+        if (array_key_exists('suppress', $request) || array_key_exists(sprintf('%ssuppress', $this->GetModuleId()), $request)) return true;
+    }
+
     function GetFriendlyName() {
         return $this->Lang('friendlyname');
     }
