@@ -41,6 +41,11 @@ class NetDesign extends CMSModule {
         if (array_key_exists('suppress', $request) || array_key_exists(sprintf('%ssuppress', $this->GetModuleId()), $request)) return true;
     }
 
+    function GetDependencies() {
+        if ($this->GetName() == 'NetDesign') return array();
+        return array('NetDesign' => '1.0.0');
+    }
+
     function GetFriendlyName() {
         return $this->Lang('friendlyname');
     }
