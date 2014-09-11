@@ -30,9 +30,18 @@ class NetDesign extends CMSModule {
             foreach(NetDesign::$loaders as $loader) {
                 list($directory, $pattern) = $loader;
                 if (!fnmatch($pattern, $class)) continue;
-                $fn = cms_join_path($directory, sprintf('class.%s.php', $class));
-                if (!file_exists($fn)) continue;
-                require_once($fn);
+                $filenames = array(
+                    cms_join_path($directory, sprintf('class.%s.php', $class)),
+                    cms_join_path($directory, sprintf('interface.%s.php', $class)),
+                    cms_join_path($directory, sprintf('%s.php', $class))
+                );
+                $found = null;
+                foreach($filenames as $fn) {
+                    if (!file_exists($fn)) continue;
+                    $found = $fn;
+                    require_once($fn);
+                    if (class_exists($class, false)) return true;
+                }
             }
         }, true);
     }
