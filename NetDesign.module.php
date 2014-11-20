@@ -26,7 +26,7 @@ class NetDesign extends CMSModule {
         $this->RestrictUnknownParams(false);
         parent::__construct();
         $this->LoadLangMethods();
-        cms_module_Lang($this, '');
+        if (NetDesign::GetCMSVersion() == 1) cms_module_Lang($this, '');
         $this->IncludeSiteLang();
         spl_autoload_register(function($class) {
             foreach(NetDesign::$loaders as $loader) {
