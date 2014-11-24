@@ -25,8 +25,11 @@ class NetDesign extends CMSModule {
     function __construct() {
         $this->RestrictUnknownParams(false);
         parent::__construct();
-        $this->LoadLangMethods();
-        if (NetDesign::GetCMSVersion() == 1) cms_module_Lang($this, '');
+
+        if (NetDesign::GetCMSVersion() == 1) {
+            $this->LoadLangMethods();
+            cms_module_Lang($this, '');
+        }
         $this->IncludeSiteLang();
         spl_autoload_register(function($class) {
             foreach(NetDesign::$loaders as $loader) {
@@ -163,13 +166,18 @@ class NetDesign extends CMSModule {
         if (NetDesign::GetCMSVersion() == 1) {
             $this->smarty->assign('lang', current($this->langhash));
         } else {
+            // The following two lines are a dirty way to make sure the language is loaded
+            CmsLangOperations::key_exists('');
+            $this->Lang('--dummy--');
+            // Make sure we have a default (empty) lang array
             $this->smarty->assign('lang', array());
+            // Try to fill the array with all language variables
             $data = &CmsLangOperations::$_langdata;
             $clng = CmsNlsOperations::get_current_language();
             $mod = $this->GetName();
-            if (!array_key_exists($mod, $data)) return;
-            if (!array_key_exists($clng, $data[$mod])) return;
-            $this->smarty->assign('lang', $data[$mod][$clng]);
+            if (!array_key_exists($clng, $data)) return;
+            if (!array_key_exists($mod, $data[$clng])) return;
+            $this->smarty->assign('lang', $data[$clng][$mod]);
         }
     }
 
